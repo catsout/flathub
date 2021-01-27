@@ -14,9 +14,9 @@ finish-args:
   - --socket=fallback-x11
   - --socket=pulseaudio
   - --share=network
-  - --filesystem=xdg-download
-  - --persist=.config
   - --device=dri
+  - --persist=.config
+  - --filesystem=xdg-download
   - --talk-name=org.freedesktop.Notifications
 modules:
   - name: baidunetdisk
@@ -34,24 +34,27 @@ modules:
           - ar x baidudisk.deb
           - tar xf data.tar.xz
           - rm baidudisk.deb control.tar.* data.tar.* debian-binary 
+          - FLATPAK_ID=com.baidu.BaiduNetdisk
           - desktop-file-edit --set-key="Exec" --set-value="baidunetdisk %U" usr/share/applications/baidunetdisk.desktop
-          - desktop-file-edit --set-icon="com.baidu.BaiduNetdisk" usr/share/applications/baidunetdisk.desktop
+          - desktop-file-edit --set-icon="$FLATPAK_ID" usr/share/applications/baidunetdisk.desktop
           - install -Dm644 usr/share/applications/baidunetdisk.desktop -t export/share/applications
           - install -Dm644 usr/share/icons/hicolor/scalable/apps/baidunetdisk.svg -t export/share/icons/hicolor/scalable/apps
+          - rename "baidunetdisk" "$FLATPAK_ID" export/share/{applications,icons/hicolor/*/apps}/baidunetdisk.*
           - rm -rf usr
-          - rename "baidunetdisk" "com.baidu.BaiduNetdisk" export/share/{applications,icons/hicolor/*/apps}/baidunetdisk.*
+
       - type: script
         dest-filename: baidunetdisk
         commands:
+          - export TMPDIR=$XDG_RUNTIME_DIR/app/$FLATPAK_ID
           - exec zypak-wrapper /app/extra/opt/baidunetdisk/baidunetdisk "$@"
+
       - type: extra-data
         filename: baidudisk.deb
-        only-arches: [x86_64]
         url: https://issuecdn.baidupcs.com/issue/netdisk/LinuxGuanjia/3.5.0/baidunetdisk_3.5.0_amd64.deb
         sha256: aed0a95f4162e17d88159ed0736636fa47f49af313d0820647af460df4fd49b6
         size: 111252214 
         x-checker-data:
-          type: html
+          type: git
           url: https://pan.baidu.com/disk/cmsdata?do=client
-          version-pattern: version.:.Linux V([\d.-]+)
-          url-pattern: (http[s]?://[\w\d$-_@.&+]+amd64\.deb)
+          version-pattern: .linux|.version|sub(\"Linux[^0-9]*\";\"\")
+          url-query: .linux|.url_1
